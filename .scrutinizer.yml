@@ -1,0 +1,29 @@
+build:
+    environment:
+        php: 7.0.7
+        nginx:
+            sites:
+                symfony_app:
+                    host: 'mytest.dev'
+                    web_root: './'
+                    index: 'index.php'
+                    locations:
+                        - >
+                            location ~ [^/]\.php(/|$) {
+                                try_files $uri $uri/ /index.php; 
+                                fastcgi_index index.php;
+                                fastcgi_split_path_info ^(.+?\.php)(/.*)$;
+                                fastcgi_pass 127.0.0.1:9000;
+                                include fastcgi_params;
+                            }
+                    
+    tests:
+        before:
+            - sudo echo '<?php var_export($_SERVER)?>' > index.php
+            - cat /home/scrutinizer/.phpenv/versions/7.0.7/var/run/php-fpm.pid
+        override:
+            - curl http://mytest.dev/index.php
+            - pecl install uploadprogress
+            - cat /home/scrutinizer/.phpenv/versions/7.0.7/var/run/php-fpm.pid
+            - find /etc/nginx/sites-enabled/ -type f -name '*symfony_app*' | xargs cat
+            - cat /home/scrutinizer/.phpenv/versions/7.0.7/etc/php-fpm.d/www.conf
